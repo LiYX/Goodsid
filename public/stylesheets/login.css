@@ -1,0 +1,13 @@
+#firstDiv{
+	position: absolute;
+	width: 100%;
+	top:200px;
+	left:0px;
+}
+
+#secondDiv{
+	position: absolute;
+	width: 100%;
+	top:500px;
+	left:0px;
+}

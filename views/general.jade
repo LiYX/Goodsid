@@ -1,0 +1,186 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+
+		div#fullscreen(style="display: none;")
+			div.fullscreenImg
+				img#bigImg
+
+		//- navbar
+		nav.navbar.navbar-default.navbar-fixed-top#navbar(role="navigation")
+			div.container-fluid
+				div.navbar-header
+					button.navbar-toggle.collapsed#nav-btn(data-toggle="collapse" data-target="#bs-example-navbar-collapse-1")
+						span.sr-only Toggle navigation
+						span.icon-bar
+						span.icon-bar
+						span.icon-bar
+					a.navbar-brand Subcourse
+				div.collapse.navbar-collapse#bs-example-navbar-collapse-1
+					ul.nav.navbar-nav#nav-selection
+
+		div.container#container
+			div.panel.panel-default
+				div.panel-heading 
+				div.panel-body
+					img.img-responsive#paper-img(width='100%')
+					u#supplement
+					img.img-responsive#paper-img2(width='100%')
+
+			button.btn.btn-success.btn-block#answer-btn(type="submit") 答案
+			button.btn.btn-block#last-one-btn(type="submit") 上一题
+			button.btn.btn-block#next-one-btn(type="submit") 下一题
+			button.btn.btn-block#back-btn(type="submit") 返回
+
+	script(src='javascripts/jquery.min.js')
+	script(src='javascripts/bootstrap.min.js')
+	script(type='text/javascript').
+		$(document).ready(function(){
+
+			var hideAll = function(){
+					$('#last-one-btn').hide();
+					$('#next-one-btn').hide();
+					$('#answer-btn').hide();
+					$('#paper-img').hide();
+					$('#paper-img2').hide();
+					$('#supplement').empty();
+					$('#back-btn').hide();
+			}
+
+			hideAll();
+
+			var paper_id = '#{paper_id}';
+			var item_id = null;
+
+			$.get("/getPaper?paper_id="+paper_id, { }, function (response) {
+					if (response.result == 'false') {
+							alert(response.msg);
+							return;
+					} else {
+						var paper = response.paper;
+						var index = 0;//当前页
+						var sections = response.sections;
+						if(!paper || paper.length == 0)
+						{
+							alert('试卷不存在');
+							return;	
+						}
+
+						var showWidget = function(){
+							if(index == 0)
+							{
+								$('#paper-img').attr('src',paper[0].coverImg);
+								$('#paper-img2').attr('src',paper[0].tipImg);
+								$('#supplement').empty().append(paper[0].supplement);
+								$('#paper-img').show();
+								$('#paper-img2').show();
+							}
+							else
+							{
+								if(paper[index].sectionUrl)
+								{
+									$('#paper-img').attr('src',paper[index].sectionUrl);
+								}
+								else
+								{
+									$('#paper-img').attr('src',paper[index].questionUrl);
+									$('#answer-btn').show();
+								}
+								$('#paper-img').show();
+							}
+
+							if(index > 0)
+								$('#last-one-btn').show();
+							if(index < paper.length - 1)
+								$('#next-one-btn').show();
+						}
+
+						showWidget();
+
+						var htm;
+						for(var i = 0;i < sections.length;i++)
+						{
+							htm = '<li><a href="#" id="section' + i + '">第'+ i + '大题</a></li>';
+							$('#nav-selection').append(htm);
+							$('#section' + i).click(function(){
+								hideAll();
+
+								var num = parseInt(this.id.charAt(7));
+								index = sections[num];
+
+								showWidget();
+
+								$('#bs-example-navbar-collapse-1').attr('class','navbar-collapse collapse');
+								$('#bs-example-navbar-collapse-1').attr('aria-expanded','false');
+								$('#bs-example-navbar-collapse-1').attr('style','height: 1px;');
+								$('#nav-btn').attr('class','navbar-toggle collapsed');
+								$('#nav-btn').attr('aria-expanded','false');
+							});
+						}
+
+						$('#answer-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							hideAll();
+							$('#paper-img').attr('src',paper[index].answerUrl);
+							$('#paper-img').show();
+							$('#back-btn').show();
+						});
+
+						$('#back-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							hideAll();
+							showWidget();
+						});
+
+						$('#last-one-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							if(index > 0)
+							{
+								index--;
+								hideAll();
+								showWidget();
+							}
+							else
+							{
+								alert('err!')
+							}
+						});
+
+						$('#next-one-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							if(index < paper.length - 1)
+							{
+								index++;
+								hideAll();
+								showWidget();
+							}
+							else
+							{
+								alert('err!');
+							}
+						});
+
+						$('#fullscreen').click(function(){
+							$('#fullscreen').hide();
+							hideAll();
+							$('#navbar').show();
+							showWidget();
+						});
+
+						$('#paper-img').click(function(){
+							$('#navbar').hide();
+							hideAll();
+							$('#bigImg').attr('src',$('#paper-img').attr('src'));
+							$('#fullscreen').show();
+						});
+
+						$('#paper-img2').click(function(){
+							$('#navbar').hide();
+							hideAll();
+							$('#bigImg').attr('src',$('#paper-img2').attr('src'));
+							$('#fullscreen').show();
+						});
+				}
+			});
+		});

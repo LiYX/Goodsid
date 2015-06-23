@@ -1,0 +1,132 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+
+		//- navbar
+		nav.navbar.navbar-default.navbar-fixed-top#navbar(role="navigation")
+			div.container-fluid
+				div.collapse.navbar-collapse#bs-example-navbar-collapse-1
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-arrow-left#back
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-plus#create
+					ul.nav.navbar-nav.navbar-right
+								p.navbar-text.text-center YO,WELCOME TO YOUR WORLD!
+
+		div.container
+			div.panel.panel-default
+				div.panel-heading 
+				div.panel-body
+					table.table.table-striped
+						tbody#main-body
+							tr
+								td
+								td
+								td name
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#name
+							tr
+								td
+								td
+								td type
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#type
+							tr
+								td
+								td
+								td size
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#size
+							tr
+								td
+								td
+								td large
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#large
+							tr
+								td
+								td
+								td value
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#value
+
+		button.btn.btn-block#save-btn(type="submit") SAVE
+
+	script(src='javascripts/jquery.min.js')
+	script(src='javascripts/jquery.qrcode.min.js')
+	script(type='text/javascript').
+		$(document).ready(function(){
+			$('#back').click(function(){
+				location.href = '/user';
+			});
+
+			var otherAttriLen = 0;
+			var product = new Object();
+
+			$('#create').click(function(){
+				var htm = '<tr id="other' + otherAttriLen + '"><td><span id="delete' + otherAttriLen + '" class="glyphicon glyphicon-remove"></span></td><td></td><td><textarea id="otherAttri' + otherAttriLen + '" rows="1" type="text"></textarea></td><td></td><td><textarea id="otherValue' + otherAttriLen + '" rows="1" cols="30" type="text"></textarea></td></tr>';
+				$('#main-body').append(htm);
+				$('#delete' + otherAttriLen).click(function(){
+					var num = parseInt(this.id.charAt(6));
+					$('#other' + num).remove();
+				});
+				otherAttriLen++;
+			});
+
+			$('#save-btn').click(function(){
+				product.size = $('#size').val();
+				product.large = $('#large').val();
+				product.type = $('#type').val();
+				product.value = $('#value').val();
+				product.name = $('#name').val();
+
+				if($('#name').val() == '' || $('#name').val() == null)
+				{
+					alert('the name is neccessary!');
+					return;
+				}
+
+				var otherAttri = [];
+				var otherValue = [];
+				var i = 0;
+				$('textarea').each(function(idx){
+					if(this.id.indexOf('otherAttri') != -1)
+					{
+						var num = parseInt(this.id.charAt(10));
+						otherAttri[i] = $(this).val();
+						otherValue[i] = $('#otherValue' + num).val();
+						i++;
+					}
+					else
+						;
+				});
+				product.otherAttri = otherAttri;
+				product.otherValue = otherValue;
+				
+				$.post('/createGood', {product : product}, function(res){
+					if(res.result == 'false')
+					{
+						if(res.msg == 'login')
+						{
+							alert('please Re login!');
+							location.href = '/login'
+						}
+						else
+							alert(res.msg);
+					}
+					else
+						alert('success!');
+					location.href = '/user';
+				});
+			});
+		});

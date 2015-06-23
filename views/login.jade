@@ -1,0 +1,38 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+		nav.navbar.navbar-default.navbar-fixed-top#navbar(role="navigation")
+			div.container-fluid
+				div.navbar-header
+					a.navbar-brand Goodsid
+
+		div.container#container
+			div.panel.panel-default
+				div.panel-heading
+				div.panel-body
+					div
+						input.form-control#username(type="text" placeholder="USERNAME")
+					div
+						input.form-control#password(type="password" placeholder="PASSWORD")
+					<br>
+					<br>
+					<br>
+					<br>
+					<br>
+					<br>
+					button.btn.btn-block#go(type="submit") GO
+	script(src='javascripts/jquery.min.js')
+	script(type='text/javascript').
+		$(document).ready(function(){
+			$('#go').click(function(){
+				$.get('/checkLogin?account=' + $('#username').val() + '&password=' + $('#password').val(), {}, function(res){
+					if(res.result == 'false')
+					{
+						alert(res.msg);
+					}
+					else
+						location.href = '/user';
+				});
+			});
+		});

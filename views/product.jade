@@ -1,0 +1,160 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+
+		//- navbar
+		nav.navbar.navbar-default.navbar-fixed-top#navbar(role="navigation")
+			div.container-fluid
+				div.collapse.navbar-collapse#bs-example-navbar-collapse-1
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-arrow-left#back
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-plus#create
+					ul.nav.navbar-nav.navbar-right
+								p.navbar-text.text-center YO,WELCOME TO YOUR WORLD!
+
+		div.container
+			div.panel.panel-default
+				div.panel-heading 
+					div#name
+				div.panel-body
+					table.table.table-striped
+						tbody#main-body
+							tr
+								td
+								td
+								td type
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#type
+							tr
+								td
+								td
+								td size
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#size
+							tr
+								td
+								td
+								td large
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#large
+							tr
+								td
+								td
+								td value
+								td
+								td
+									textarea(rows="1" cols="30" type="text")#value
+		div.container
+			div.panel.panel-default
+				div.panel-heading 
+					div qrcode
+				div.panel-body
+					div.text-center#qrcode
+
+		button.btn.btn-block#save-btn(type="submit") SAVE
+
+	script(src='javascripts/jquery.min.js')
+	script(src='javascripts/jquery.qrcode.min.js')
+	script(type='text/javascript').
+		$(document).ready(function(){
+			$('#back').click(function(){
+				location.href = '/user';
+			});
+
+			var productId = '#{productId}';
+			var otherAttriLen = 0;
+			var product = null;
+
+			$('#create').click(function(){
+				var htm = '<tr id="other' + otherAttriLen + '"><td><span id="delete' + otherAttriLen + '" class="glyphicon glyphicon-remove"></span></td><td></td><td><textarea id="otherAttri' + otherAttriLen + '" rows="1" type="text"></textarea></td><td></td><td><textarea id="otherValue' + otherAttriLen + '" rows="1" cols="30" type="text"></textarea></td></tr>';
+				$('#main-body').append(htm);
+				$('#delete' + otherAttriLen).click(function(){
+					var num = parseInt(this.id.charAt(6));
+					$('#other' + num).remove();
+				});
+				otherAttriLen++;
+			});
+
+			$('#save-btn').click(function(){
+				product.size = $('#size').val();
+				product.large = $('#large').val();
+				product.type = $('#type').val();
+				product.value = $('#value').val();
+
+				var otherAttri = [];
+				var otherValue = [];
+				var i = 0;
+				$('textarea').each(function(idx){
+					if(this.id.indexOf('otherAttri') != -1)
+					{
+						var num = parseInt(this.id.charAt(10));
+						otherAttri[i] = $(this).val();
+						otherValue[i] = $('#otherValue' + num).val();
+						i++;
+					}
+					else
+						;
+				});
+				product.otherAttri = otherAttri;
+				product.otherValue = otherValue;
+				
+				$.post('/editGood', {product : product}, function(res){
+					if(res.result == 'false')
+					{
+						if(res.msg == 'login')
+						{
+							alert('please Re login!');
+							location.href = '/login';
+						}
+						else
+							alert(res.msg);
+					}
+					else
+						alert('success!');
+					location.href = '/product?productId=' + productId;
+				});
+			});
+
+			$.get('/getGood?productId=' + productId, {}, function(res){
+				if(res.result == 'false')
+				{
+					alert(res.msg);
+				}
+				if(res.product)
+				{
+					product = res.product;
+					$('#name').append(product.name);
+					$('#qrcode').qrcode(product.objId);
+					$('#type').append(product.type);
+					$('#size').append(product.size);
+					$('#large').append(product.large);
+					$('#value').append(product.value);
+					if(product.otherAttri)
+					{
+						otherAttriLen = product.otherAttri.length;
+						for(var i = 0; i < product.otherAttri.length; i++)
+						{
+							var htm = '<tr id="other' + i + '"><td><span id="delete' + i + '" class="glyphicon glyphicon-remove"></span></td><td></td><td><textarea id="otherAttri' + i + '" rows="1" type="text">' + product.otherAttri[i] + '</textarea></td><td></td><td><textarea id="otherValue' + i + '" rows="1" cols="30" type="text">' + product.otherValue[i] + '</textarea></td></tr>';
+							$('#main-body').append(htm);
+							$('#delete' + i).click(function(){
+								var num = parseInt(this.id.charAt(6));
+								$('#other' + num).remove();
+							});
+						}
+					}
+				}
+				else
+				{
+					alert('obj does not exit!');
+				}
+			});
+		});

@@ -1,0 +1,96 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+
+		//- navbar
+		nav.navbar.navbar-default.navbar-fixed-top#navbar(role="navigation")
+			div.container-fluid
+				div.collapse.navbar-collapse#bs-example-navbar-collapse-1
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-arrow-left#back
+					ul.nav.navbar-nav.navbar-right
+								p.navbar-text.text-center YO,WELCOME TO YOUR WORLD!
+
+		div.container
+			div.panel.panel-default
+				div.panel-heading 
+					div background
+				div.panel-body
+					a.btn.btn-default.btn-lg#select(type="submit")
+						i.glyphicon.glyphicon-plus
+						span 选择图片
+					<br>
+					<br>
+					img.img-responsive.center-block#img
+
+	script(src='javascripts/jquery.min.js')
+	script(src='javascripts/js/qiniu.js')
+	script(src='javascripts/js/plupload/plupload.full.min.js')
+	script(type='text/javascript').
+		$(document).ready(function(){
+			var account = '#{account}';
+			var uploader = Qiniu.uploader({
+				runtimes : 'html5,flash,html4',
+				browse_button : 'select',
+				uptoken_url : '/uptoken',
+				domain : '7xjse3.com1.z0.glb.clouddn.com',
+				unique_names: false ,
+				save_key: false,
+				max_file_size: '100mb',
+				flash_swf_url : 'js/plupload/Moxie.swf',
+				max_retries : 3,
+				dragdrop : true,
+				drop_element : 'container',
+				chunk_size : '4mb',
+				auto_start : true,
+				init : {
+					'FileUploaded': function(up, file, info){
+						var result = eval("(" + info + ")");
+						$.get('/setBackground?background=http://7xjse3.com1.z0.glb.clouddn.com/' + result.key, {}, function(res){
+							if(res.result == 'false')
+							{
+								if(res.msg == 'login')
+								{
+									alert('please Re login!');
+									location.href = '/login';
+								}
+								else
+									alert(res.msg);
+							}
+							else if(res.result == 'true')
+							{
+								alert('success!');
+								$('#img').attr('src','http://7xjse3.com1.z0.glb.clouddn.com/' + result.key);
+							}
+						});
+					},
+					'Error': function(up, err, errTip) {
+						alert(errTip);
+					 },
+					 'Key' : function(up , file){
+					 	var key = account + Date.parse(new Date());
+					 	return key;
+					 }
+				}
+			});
+			$.get('/getBackground', {}, function(res){
+				if(res.result == 'false')
+				{
+					if(res.msg == 'login')
+					{
+						alert('please Re login!');
+						location.href = '/login';
+					}
+					else
+						alert(res.msg);
+				}
+				if(res.background)
+					$('#img').attr('src', res.background);
+			});
+			$('#back').click(function(){
+				location.href = '/user';
+			});
+		});

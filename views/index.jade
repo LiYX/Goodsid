@@ -1,0 +1,293 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+		//- navbar
+		nav.navbar.navbar-default.navbar-fixed-top(role="navigation")
+			div.container-fluid
+				div.navbar-header
+					button.navbar-toggle.collapsed#nav-btn(data-toggle="collapse" data-target="#bs-example-navbar-collapse-1")
+						span.sr-only Toggle navigation
+						span.icon-bar
+						span.icon-bar
+						span.icon-bar
+					a.navbar-brand Subcourse
+				div.collapse.navbar-collapse#bs-example-navbar-collapse-1
+					ul.nav.navbar-nav#nav-selection
+
+		div.container
+			div.panel.panel-default
+				div.panel-heading 
+				div.panel-body
+					img#paper-img(width='100%')
+					u#supplement
+					img#paper-img2(width='100%')
+
+			button.btn.btn-success.btn-block#answer-btn(type="submit") 答案
+			button.btn.btn-success.btn-block#collect-btn(type="submit") 收藏
+			button.btn.btn-warning.btn-block#cancel-collect-btn(type="submit") 取消收藏
+			button.btn.btn-success.btn-block#comment-btn(type="submit") 评论
+			button.btn.btn-block#last-one-btn(type="submit") 上一题
+			button.btn.btn-block#next-one-btn(type="submit") 下一题
+			button.btn.btn-block#back-btn(type="submit") 返回
+
+	script(src='javascripts/jquery.min.js')
+	script(src='javascripts/bootstrap.min.js')
+	<script src="aui-artDialog-9fd667e/dist/dialog-min.js"></script>
+	<link rel="stylesheet" href="aui-artDialog-9fd667e/css/ui-dialog.css">
+	script(type='text/javascript').
+		$(document).ready(function(){
+			var paper_id = '#{paper_id}';
+			var wechat_id = '#{wechat_id}';
+			var item_id = null;
+			$('#last-one-btn').hide();
+			$('#next-one-btn').hide();
+			$('#answer-btn').hide();
+			$('#paper-img').hide();
+			$('#paper-img2').hide();
+			$('#back-btn').hide();
+			$('#collect-btn').hide();
+			$('#cancel-collect-btn').hide();
+			$('#comment-btn').hide();
+
+			$.get("/getPaper?paper_id="+paper_id, { }, function (response) {
+					if (response.result == 'false') {
+							alert(response.msg);
+					} else {
+						var paper = response.paper;
+						var index = 0;//当前页
+						var sections = response.sections;
+						if(!paper || paper.length == 0)
+						{
+							alert('试卷不存在');
+							return;	
+						}
+
+						if(paper.length > 1)
+							$('#next-one-btn').show();
+						if(paper[0].answerUrl)
+							$('#answer-btn').show();
+						$('#paper-img').show();
+						$('#paper-img2').show();
+						$('#paper-img').attr('src',paper[0].coverImg);
+						$('#paper-img2').attr('src',paper[0].tipImg);
+						$('#supplement').empty().append(paper[0].supplement);
+
+						console.log(sections);
+						var htm;
+						for(var i = 0;i < sections.length;i++)
+						{
+							htm = '<li><a href="#" id="section' + i + '">第'+ i + '大题</a></li>';
+							$('#nav-selection').append(htm);
+							$('#section' + i).click(function(){
+								$('#last-one-btn').hide();
+								$('#next-one-btn').hide();
+								$('#answer-btn').hide();
+								$('#paper-img').hide();
+								$('#paper-img2').hide();
+								$('#back-btn').hide();
+								$('#collect-btn').hide();
+								$('#cancel-collect-btn').hide();
+								$('#comment-btn').hide();
+								$('#supplement').empty()
+
+								var num = parseInt(this.id.charAt(7));
+								console.log(num);
+								index = sections[num];
+
+								$('#last-one-btn').show();
+								if(index < paper.length - 1)
+									$('#next-one-btn').show();
+
+								$('#paper-img').attr('src',paper[index].sectionUrl);
+								$('#paper-img').show();
+
+								$('#bs-example-navbar-collapse-1').attr('class','navbar-collapse collapse');
+								$('#bs-example-navbar-collapse-1').attr('aria-expanded','false');
+								$('#bs-example-navbar-collapse-1').attr('style','height: 1px;');
+								$('#nav-btn').attr('class','navbar-toggle collapsed');
+								$('#nav-btn').attr('aria-expanded','false');
+							});
+						}
+
+						var isCollected = function(){
+								$.get('/isCollected?wechat_id=' + wechat_id + '&paper_id=' + item_id, {}, function(response){
+								if(response.result == 'true')
+								{
+									$('#cancel-collect-btn').show();
+									$('#collect-btn').hide();
+								}
+								else
+								{
+									$('#cancel-collect-btn').hide();
+									$('#collect-btn').show();	
+								}
+							});	
+						};
+
+						$('#collect-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+
+							$.get('/collect?wechat_id=' + wechat_id + '&item_id=' + item_id, {}, function(response){
+								if(response.result == 'true')
+								{
+									alert('收藏成功');
+									$('#collect-btn').hide();
+									$('#cancel-collect-btn').show();
+								}
+								else
+									alert('收藏失败');
+							});
+						});
+
+						$('#cancel-collect-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							$.get('/cancelCollect?wechat_id=' + wechat_id + '&paper_id=' + paper_id, {}, function(response){
+								if(response.result == 'true')
+								{
+									alert('取消收藏成功');
+									$('#collect-btn').show();
+									$('#cancel-collect-btn').hide();
+								}
+								else
+								{
+									alert('网络错误');
+								}
+							});
+						});
+
+						$('#comment-btn').click(function(){
+							var d = dialog({
+								title: '评论',
+								content: '<textarea id="comment_content" rows="2" cols="15"></textarea>',
+								cancel: function(){
+										this.remove();
+										},
+								ok: function () {
+										var value = $('#comment_content').val();
+										$.get('/comment?wechat_id=' + wechat_id + '&item_id=' + item_id + '&comment=' + value, {}, function(response){
+												$('html,body').animate({scrollTop: '0px'}, 100);
+											    if(response.result == 'true')
+											        alert('评论成功');
+											    else
+											        alert('评论失败');
+											    });
+										this.remove();
+										}
+							});
+							d.show();
+						});
+
+						$('#answer-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							$('#back-btn').show();
+							$('#answer-btn').hide();
+							$('#last-one-btn').hide();
+							$('#next-one-btn').hide();
+							$('#collect-btn').hide();
+							$('#cancel-collect-btn').hide();
+							$('#comment-btn').hide();
+							return $('#paper-img').attr('src',paper[index].answerUrl);
+						});
+
+						$('#back-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							$('#back-btn').hide();
+							isCollected();
+							$('#comment-btn').show();
+							if(paper[index].answerUrl)
+							{
+								$('#comment-btn').show();
+								$('#answer-btn').show();
+							}
+							if(index > 0)
+								$('#last-one-btn').show();
+							if(index < paper.length - 1)
+								$('#next-one-btn').show();
+							return $('#paper-img').attr('src',paper[index].questionUrl);
+						});
+
+						$('#last-one-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							if(index > 0)
+							{
+								index--;
+								if(paper[index].answerUrl)
+								{
+									item_id = paper[index].item_id;
+									isCollected();
+									$('#answer-btn').show();
+									$('#comment-btn').show();
+								}
+								else
+								{	
+									$('#answer-btn').hide();
+									$('#collect-btn').hide();
+									$('#cancel-collect-btn').hide();
+									$('#comment-btn').hide();
+								}
+								if(index == 0)
+									$('#last-one-btn').hide();
+								if(index == paper.length - 2)
+									$('#next-one-btn').show();
+
+								if(paper[index].sectionUrl)
+									return $('#paper-img').attr('src',paper[index].sectionUrl);
+
+								if(paper[index].coverImg)
+								{
+									$('#supplement').append(paper[index].supplement);
+									$('#paper-img2').show();
+									return $('#paper-img').attr('src',paper[index].coverImg);
+								}
+
+								return $('#paper-img').attr('src',paper[index].questionUrl);
+							}
+							else
+							{
+								alert('err!')
+							}
+						});
+
+						$('#next-one-btn').click(function(){
+							$('html,body').animate({scrollTop: '0px'}, 100);
+							if(index < paper.length - 1)
+							{
+								index++;
+								if(paper[index].answerUrl)
+								{
+									item_id = paper[index].item_id;
+									isCollected();
+									$('#answer-btn').show();
+									$('#comment-btn').show();
+								}
+								else
+								{
+									$('#answer-btn').hide();
+									$('#collect-btn').hide();
+									$('#cancel-collect-btn').hide();
+									$('#comment-btn').hide();
+								}
+									
+								if(index == paper.length - 1)
+									$('#next-one-btn').hide();
+								if(index == 1)
+								{
+									$('#paper-img2').hide();
+									$('#supplement').empty();
+									$('#last-one-btn').show();
+								}
+
+								if(paper[index].sectionUrl)
+									return $('#paper-img').attr('src',paper[index].sectionUrl);
+
+								return $('#paper-img').attr('src',paper[index].questionUrl);
+							}
+							else
+							{
+								alert('err!');
+							}
+						});
+				}
+			});
+		});

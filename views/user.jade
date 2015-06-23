@@ -1,0 +1,122 @@
+extends layout
+
+block body
+	body(style="padding-top:70px;")
+
+		//- navbar
+		nav.navbar.navbar-default.navbar-fixed-top#navbar(role="navigation")
+			div.container-fluid
+				div.collapse.navbar-collapse#bs-example-navbar-collapse-1
+					ul.nav.navbar-nav.navbar-right
+								p.navbar-text.text-center YO,WELCOME TO YOUR WORLD!
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-cog#setting
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-plus#create
+					ul.nav.navbar-nav.navbar-left
+						li
+							a
+								span.glyphicon.glyphicon-minus#remove
+
+		div.container#container
+			div.panel.panel-default
+				div.panel-heading 
+				div.panel-body#main-panel
+
+		button.btn.btn-block#delete-btn(style="display: none;submit") DELETE
+		button.btn.btn-block#logout-btn(type="submit") LOG OUT
+
+	script(src='javascripts/jquery.min.js')
+	script(type='text/javascript').
+		$(document).ready(function(){
+			var goods = null;
+			$.get('/getGoods', {}, function(res){
+				if(res.result == 'false')
+				{
+					if(res.msg == 'login')
+					{
+						alert('please Re login!');
+						location.href = '/login';
+					}
+					else
+						alert(res.msg);
+				}
+				else if(res.goods)
+				{
+					goods = res.goods;
+					var htm = '<div id="main' + 0 + '" class="row"><div class ="col-md-11"><button id="GOOD' + 0 + '" class="btn btn-default btn-block" type="submit"><p>' + goods[0].name +'</p></button></div><div class="col-md-1"><span style="display: none;submit" id="delete' + 0 + '" class="glyphicon glyphicon-remove"></span></div></div>';
+					$('#main-panel').append(htm);
+					for(var i = 1; i < goods.length; i++)
+					{
+						htm = '<br><div id="main' + i + '" class="row"><div class ="col-md-11"><button id="GOOD' + i + '" class="btn btn-default btn-block" type="submit"><p>' + goods[i].name +'</p></button></div><div class="col-md-1"><span style="display: none;submit" id="delete' + i + '" class="glyphicon glyphicon-remove"></span></div></div>';
+						$('#main-panel').append(htm);
+
+					}
+					for(var i = 0; i < goods.length; i++)
+					{
+						$('#GOOD' + i).click(function(){
+							var num = parseInt(this.id.charAt(4));
+							location.href = '/product?productId=' + goods[num].objId;
+						});
+
+						$('#delete' + i).click(function(){
+							var num = parseInt(this.id.charAt(6));
+							$.post('/removeGood', {objId : goods[num].objId}, function(res){
+								if(res.result == 'false')
+								{
+									if(res.msg == 'login')
+									{
+										alert('please Re login!');
+										location.href = '/login';
+									}
+									else
+										alert(res.msg);
+								}
+								else
+								{
+									$('#main' + num).remove();
+								}
+							});
+						});
+					}
+				}
+				else
+				{}
+
+			});
+			$('#logout-btn').click(function(){
+				location.href = '/login';
+			});
+
+			$('#setting').click(function(){
+				location.href = '/setting';
+			});
+
+			$('#create').click(function(){
+				location.href = '/create'
+			});
+
+			var times = 0;
+			$('#remove').click(function(){
+				times++;
+				if(times % 2 != 0)
+					$('span').each(function(idx){
+						if(this.id.indexOf('delete') != -1)
+						{
+							$(this).show();
+						}
+					});
+				else
+					$('span').each(function(idx){
+						if(this.id.indexOf('delete') != -1)
+						{
+							$(this).hide();
+						}
+					});
+
+			});
+		});
